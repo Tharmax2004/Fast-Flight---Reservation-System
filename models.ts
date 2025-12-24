@@ -3,122 +3,116 @@ import { Flight, Booking, PriceAlert, PaymentMethod } from './types';
 
 /**
  * Object-Oriented Design for the Reservation System.
- * Encapsulates the business logic within classes.
+ * This acts as the 'Service Layer' and 'Data Access Layer'.
  */
 
-export class FlightModel {
-  constructor(public data: Flight) {}
-
-  getFormattedPrice(): string {
-    return `₹${this.data.price.toLocaleString('en-IN')}`;
-  }
-
-  isSameRoute(origin: string, destination: string): boolean {
-    return (
-      this.data.origin.toLowerCase().includes(origin.toLowerCase()) &&
-      this.data.destination.toLowerCase().includes(destination.toLowerCase())
-    );
-  }
+export class UserProfile {
+  constructor(
+    public name: string = 'Guest Explorer',
+    public email: string = 'guest@fastflight.com',
+    public tier: 'Silver' | 'Gold' | 'Platinum' = 'Silver'
+  ) {}
 }
 
-export class AlertSystem {
-  private alerts: PriceAlert[] = [];
+export class ReservationDatabase {
+  private static instance: ReservationDatabase;
+  private storageKey = 'fastflight_db_v1';
 
-  constructor() {
-    const saved = localStorage.getItem('fastflight_alerts');
+  private data: {
+    bookings: Booking[];
+    alerts: PriceAlert[];
+    user: UserProfile;
+  };
+
+  private constructor() {
+    const saved = localStorage.getItem(this.storageKey);
     if (saved) {
-      this.alerts = JSON.parse(saved);
+      this.data = JSON.parse(saved);
+    } else {
+      this.data = {
+        bookings: [],
+        alerts: [],
+        user: new UserProfile()
+      };
     }
   }
 
-  createAlert(origin: string, destination: string, date: string, targetPrice: number): PriceAlert {
-    const newAlert: PriceAlert = {
-      id: `AL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-      origin,
-      destination,
-      date,
-      targetPrice,
-      isTriggered: false,
-      createdAt: Date.now()
-    };
-    this.alerts.push(newAlert);
-    this.save();
-    return newAlert;
+  public static getInstance(): ReservationDatabase {
+    if (!ReservationDatabase.instance) {
+      ReservationDatabase.instance = new ReservationDatabase();
+    }
+    return ReservationDatabase.instance;
   }
 
-  getAlerts(): PriceAlert[] {
-    return this.alerts;
+  private persist() {
+    localStorage.setItem(this.storageKey, JSON.stringify(this.data));
   }
 
-  removeAlert(id: string) {
-    this.alerts = this.alerts.filter(a => a.id !== id);
-    this.save();
+  // Booking Operations
+  public addBooking(booking: Booking) {
+    this.data.bookings.push(booking);
+    this.persist();
   }
 
-  checkAlerts(flights: Flight[]) {
-    let triggeredAny = false;
-    this.alerts = this.alerts.map(alert => {
-      const matchingFlight = flights.find(f => 
+  public getBookings(): Booking[] {
+    return this.data.bookings;
+  }
+
+  public cancelBooking(id: string) {
+    this.data.bookings = this.data.bookings.map(b => 
+      b.id === id ? { ...b, status: 'Cancelled' as const } : b
+    );
+    this.persist();
+  }
+
+  // Alert Operations
+  public addAlert(alert: PriceAlert) {
+    this.data.alerts.push(alert);
+    this.persist();
+  }
+
+  public getAlerts(): PriceAlert[] {
+    return this.data.alerts;
+  }
+
+  public removeAlert(id: string) {
+    this.data.alerts = this.data.alerts.filter(a => a.id !== id);
+    this.persist();
+  }
+
+  public updateAlerts(flights: Flight[]) {
+    let changed = false;
+    this.data.alerts = this.data.alerts.map(alert => {
+      const match = flights.find(f => 
         f.origin.toLowerCase() === alert.origin.toLowerCase() && 
         f.destination.toLowerCase() === alert.destination.toLowerCase() &&
         f.price <= alert.targetPrice
       );
-
-      if (matchingFlight && !alert.isTriggered) {
-        triggeredAny = true;
-        return { ...alert, isTriggered: true, currentPrice: matchingFlight.price };
+      if (match && !alert.isTriggered) {
+        changed = true;
+        return { ...alert, isTriggered: true, currentPrice: match.price };
       }
       return alert;
     });
-    
-    if (triggeredAny) {
-      this.save();
-    }
-    return triggeredAny;
-  }
-
-  private save() {
-    localStorage.setItem('fastflight_alerts', JSON.stringify(this.alerts));
+    if (changed) this.persist();
+    return changed;
   }
 }
 
-export class BookingSystem {
-  private bookings: Booking[] = [];
+export class FlightEngine {
+  constructor(public flight: Flight) {}
 
-  constructor() {
-    const saved = localStorage.getItem('fastflight_bookings');
-    if (saved) {
-      this.bookings = JSON.parse(saved);
-    }
+  public getPriceFormatted(): string {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(this.flight.price);
   }
 
-  createBooking(flight: Flight, passengerName: string, paymentMethod: PaymentMethod): Booking {
-    const newBooking: Booking = {
-      id: `BK-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-      flight,
-      passengerName,
-      seatNumber: `${Math.floor(Math.random() * 30) + 1}${['A', 'B', 'C', 'D', 'E', 'F'][Math.floor(Math.random() * 6)]}`,
-      status: 'Confirmed',
-      paymentMethod,
-      bookingDate: Date.now()
-    };
-    this.bookings.push(newBooking);
-    this.save();
-    return newBooking;
-  }
-
-  cancelBooking(id: string) {
-    this.bookings = this.bookings.map(b => 
-      b.id === id ? { ...b, status: 'Cancelled' as const } : b
-    );
-    this.save();
-  }
-
-  getBookings(): Booking[] {
-    return this.bookings;
-  }
-
-  private save() {
-    localStorage.setItem('fastflight_bookings', JSON.stringify(this.bookings));
+  public static generateSeat(): string {
+    const row = Math.floor(Math.random() * 30) + 1;
+    const col = ['A', 'B', 'C', 'D', 'E', 'F'][Math.floor(Math.random() * 6)];
+    return `${row}${col}`;
   }
 }

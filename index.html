@@ -9,51 +9,42 @@
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            overflow-x: hidden;
-            background: #1e1b4b; /* Deep base color */
-            background-image: linear-gradient(to bottom, rgba(30, 58, 138, 0.2), rgba(249, 115, 22, 0.3)), 
-                              url('https://images.unsplash.com/photo-1517400508447-f8dd518b86db?q=80&w=2000&auto=format&fit=crop');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
+            background: #020617; /* Solid dark base to prevent flicker */
+            margin: 0;
+            padding: 0;
             min-height: 100vh;
-            color: #1e1b4b;
+            color: #ffffff; /* Default text is white for visibility */
         }
         .glass-card {
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(28px);
-            -webkit-backdrop-filter: blur(28px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 12px 48px -12px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
-        .text-gradient {
-            background: linear-gradient(to right, #1e3a8a, #c2410c);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .text-glow {
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
         }
-        /* Premium custom scrollbar */
+        /* Custom scrollbar */
         ::-webkit-scrollbar {
-            width: 10px;
+            width: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.2);
         }
         ::-webkit-scrollbar-thumb {
-            background: rgba(30, 58, 138, 0.3);
-            border-radius: 20px;
-            border: 3px solid transparent;
-            background-clip: content-box;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: rgba(30, 58, 138, 0.5);
+            background: rgba(255, 255, 255, 0.2);
         }
         @keyframes progress {
             0% { transform: scaleX(0); }
-            50% { transform: scaleX(0.7); }
             100% { transform: scaleX(1); }
         }
         .animate-progress {
-            animation: progress 2s ease-in-out forwards;
+            animation: progress 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
     </style>
 <script type="importmap">
